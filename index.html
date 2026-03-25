@@ -251,7 +251,6 @@ select option { background: var(--surface); }
     <button class="signout-btn" onclick="signOut()">Sign out</button>
   </div>
 </div>
-
 <div id="main">
   <div id="topbar">
     <div class="topbar-title" id="topbar-title">Dashboard</div>
@@ -275,14 +274,16 @@ select option { background: var(--surface); }
 <script>
 const SUPABASE_URL  = 'https://lybonfyrhqpmnhukqsiz.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5Ym9uZnlyaHFwbW5odWtxc2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MTUzMzYsImV4cCI6MjA4OTk5MTMzNn0.11WpPNXEgs2uWbdgSpXK9wuZHQhYES9OipoRC68ruJA';
-
-// ── Edge Function URL (AI builder now routes through here) ──
-const EDGE_FN_URL = `${SUPABASE_URL}/functions/v1/ai-template`;
+const EDGE_FN_URL   = `${SUPABASE_URL}/functions/v1/ai-template`;
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let currentUser = null, activeBizId = null, currentView = 'dashboard', viewParams = {};
+
+// ── stores the last AI result in memory so no quoting issues ──
+let pendingAITemplate = null;
+
 const BIZ_COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#db2777','#0891b2'];
 const BIZ_EMOJIS = ['🏢','🔧','🚚','⚙️','🏗️','💼','🌿','🔩','▶️','📚','🎙️','🎵','🛒','🏠','💡','⭐'];
 
@@ -676,8 +677,9 @@ async function updateStep(templateId,stepIndex) {
 function closeModal(){document.getElementById('modal-overlay').style.display='none';}
 function closeModalOnOverlay(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
 
-// ── AI MODAL — now calls Edge Function ────────────────────────
+// ── AI MODAL ─────────────────────────────────────────────────
 async function openAIModal() {
+  pendingAITemplate = null;
   document.getElementById('modal-overlay').style.display='flex';
   document.getElementById('modal-title').textContent='✦ Ask AI to Build a Template';
   const businesses=await dbGet('businesses');
@@ -695,35 +697,52 @@ async function openAIModal() {
 
 async function runAI() {
   const prompt=document.getElementById('ai-prompt').value.trim(); if(!prompt){alert('Describe what you need first.');return;}
-  const type=document.getElementById('ai-type').value, bizId=document.getElementById('ai-biz').value;
+  const type=document.getElementById('ai-type').value;
+  const bizId=document.getElementById('ai-biz').value;
   const resultEl=document.getElementById('ai-result');
   resultEl.innerHTML=`<div class="ai-panel"><div class="ai-typing"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span style="margin-left:3px;">Building your template...</span></div></div>`;
   document.querySelector('.modal-footer .btn-ai').disabled=true;
   try {
-    const { data: { session } } = await sb.auth.getSession();
-    const res=await fetch(EDGE_FN_URL, {
+    const res=await fetch(EDGE_FN_URL,{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-        'apikey': SUPABASE_ANON,
-      },
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON},
       body:JSON.stringify({prompt,type})
     });
     const parsed=await res.json();
     if(parsed.error) throw new Error(parsed.error);
-    resultEl.innerHTML=`<div class="ai-panel"><div class="ai-panel-title">✓ Ready: "${parsed.name}"</div><div style="font-size:.77rem;color:var(--muted);margin-bottom:7px;">${parsed.description}</div><div style="font-size:.76rem;color:var(--text2);line-height:1.8;">${parsed.steps.map((s,i)=>`<div>${i+1}. ${s.title}</div>`).join('')}</div></div>`;
-    document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="openAIModal()">Try Again</button><button class="btn btn-primary" onclick="acceptAITemplate(${JSON.stringify(JSON.stringify({...parsed,type,bizId}))})">Add Template</button>`;
+
+    // Store in memory — no HTML attribute quoting issues
+    pendingAITemplate = { ...parsed, type, bizId };
+
+    resultEl.innerHTML=`<div class="ai-panel">
+      <div class="ai-panel-title">✓ Ready: "${parsed.name}"</div>
+      <div style="font-size:.77rem;color:var(--muted);margin-bottom:7px;">${parsed.description}</div>
+      <div style="font-size:.76rem;color:var(--text2);line-height:1.8;">${parsed.steps.map((s,i)=>`<div>${i+1}. ${s.title}</div>`).join('')}</div>
+    </div>`;
+    document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="openAIModal()">Try Again</button><button class="btn btn-primary" onclick="acceptAITemplate()">Add Template</button>`;
   } catch(e) {
     resultEl.innerHTML=`<div class="ai-panel" style="background:var(--danger-light);border-color:#fca5a5;"><div style="color:var(--danger);font-size:.8rem;">⚠ ${e.message}</div></div>`;
     document.querySelector('.modal-footer .btn-ai').disabled=false;
   }
 }
 
-async function acceptAITemplate(jsonStr) {
-  const d=JSON.parse(jsonStr);
-  const t=await dbInsert('templates',{biz_id:d.bizId,name:d.name,type:d.type,description:d.description,steps:d.steps.map(s=>({title:s.title,desc:s.desc||''}))});
-  if(t){closeModal();toast('Template created by AI!');navigate('template-detail',{id:t.id});}
+// ── Uses pendingAITemplate from memory — no JSON string passing ──
+async function acceptAITemplate() {
+  if(!pendingAITemplate) { toast('No template ready — please generate one first.', 'error'); return; }
+  const d = pendingAITemplate;
+  const t=await dbInsert('templates',{
+    biz_id: d.bizId,
+    name: d.name,
+    type: d.type,
+    description: d.description,
+    steps: d.steps.map(s=>({title:s.title, desc:s.desc||''}))
+  });
+  if(t){
+    pendingAITemplate = null;
+    closeModal();
+    toast('Template created by AI!');
+    navigate('template-detail',{id:t.id});
+  }
 }
 
 function playDing() {
