@@ -46,16 +46,8 @@ body {
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   font-size: 14px; line-height: 1.5;
 }
-#auth-screen {
-  position: fixed; inset: 0; background: var(--bg);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 1000; padding: 20px;
-}
-.auth-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 36px 32px;
-  width: 100%; max-width: 380px; box-shadow: var(--shadow-lg);
-}
+#auth-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 36px 32px; width: 100%; max-width: 380px; box-shadow: var(--shadow-lg); }
 .auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
 .auth-logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: .8rem; font-weight: 800; }
 .auth-logo-text { font-weight: 700; font-size: 1rem; letter-spacing: -.02em; }
@@ -68,7 +60,7 @@ body {
 .auth-field label { font-size: .76rem; font-weight: 600; color: var(--text2); display: block; margin-bottom: 5px; }
 .auth-field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 9px 12px; font-family: 'Inter', sans-serif; font-size: .84rem; outline: none; transition: border-color .1s, box-shadow .1s; }
 .auth-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
-.auth-btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: var(--radius); font-family: 'Inter', sans-serif; font-size: .84rem; font-weight: 600; cursor: pointer; transition: background .1s; margin-top: 4px; letter-spacing: -.01em; }
+.auth-btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: var(--radius); font-family: 'Inter', sans-serif; font-size: .84rem; font-weight: 600; cursor: pointer; transition: background .1s; margin-top: 4px; }
 .auth-btn:hover { background: #1d4ed8; }
 .auth-btn:disabled { background: var(--muted2); cursor: not-allowed; }
 .auth-error { background: var(--danger-light); border: 1px solid #fecaca; border-radius: var(--radius); padding: 9px 12px; font-size: .8rem; color: var(--danger); margin-bottom: 14px; }
@@ -195,30 +187,14 @@ select option { background: var(--surface); }
 .chip-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 .chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 11px; font-size: 0.75rem; cursor: pointer; transition: all .1s; font-weight: 500; color: var(--muted); }
 .chip:hover, .chip.active { background: var(--accent-light); border-color: #93c5fd; color: var(--accent); }
-
-/* ─── CUSTOM COLOR PICKER ─── */
 .color-picker-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; align-items: center; }
-.color-swatch {
-  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
-  border: 2px solid transparent; transition: all .12s;
-  flex-shrink: 0;
-}
+.color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all .12s; flex-shrink: 0; }
 .color-swatch:hover { transform: scale(1.12); }
 .color-swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px white inset; }
-.color-swatch-custom {
-  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
-  border: 2px solid var(--border2); transition: all .12s;
-  overflow: hidden; flex-shrink: 0; position: relative;
-  display: flex; align-items: center; justify-content: center;
-  background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
-}
+.color-swatch-custom { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid var(--border2); transition: all .12s; overflow: hidden; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); }
 .color-swatch-custom:hover { transform: scale(1.12); }
 .color-swatch-custom.active { border-color: var(--text); box-shadow: 0 0 0 2px white inset; }
-.color-swatch-custom input[type="color"] {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  opacity: 0; cursor: pointer; padding: 0; border: none;
-}
-
+.color-swatch-custom input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; border: none; }
 .divider { height: 1px; background: var(--border); margin: 4px 0; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -229,9 +205,7 @@ select option { background: var(--surface); }
 
 <div id="loading-screen">
   <div class="loading-logo">FD</div>
-  <div class="loading-dots">
-    <div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>
-  </div>
+  <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
 </div>
 
 <div id="auth-screen" style="display:none;">
@@ -244,14 +218,8 @@ select option { background: var(--surface); }
       <div class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Create Account</div>
     </div>
     <div id="auth-message"></div>
-    <div class="auth-field">
-      <label>Email address</label>
-      <input type="email" id="auth-email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')submitAuth()"/>
-    </div>
-    <div class="auth-field">
-      <label>Password</label>
-      <input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAuth()"/>
-    </div>
+    <div class="auth-field"><label>Email address</label><input type="email" id="auth-email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
+    <div class="auth-field"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')submitAuth()"/></div>
     <button class="auth-btn" id="auth-submit-btn" onclick="submitAuth()">Sign In</button>
   </div>
 </div>
@@ -279,10 +247,7 @@ select option { background: var(--surface); }
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Business
   </div>
   <div class="sidebar-footer">
-    <div class="user-row">
-      <div class="user-avatar" id="user-avatar">?</div>
-      <div class="user-email" id="user-email">—</div>
-    </div>
+    <div class="user-row"><div class="user-avatar" id="user-avatar">?</div><div class="user-email" id="user-email">—</div></div>
     <button class="signout-btn" onclick="signOut()">Sign out</button>
   </div>
 </div>
@@ -300,9 +265,7 @@ select option { background: var(--surface); }
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title" id="modal-title">Modal</div>
-      <button class="icon-btn" onclick="closeModal()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <button class="icon-btn" onclick="closeModal()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-footer" id="modal-footer"></div>
@@ -313,11 +276,13 @@ select option { background: var(--surface); }
 const SUPABASE_URL  = 'https://lybonfyrhqpmnhukqsiz.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5Ym9uZnlyaHFwbW5odWtxc2l6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MTUzMzYsImV4cCI6MjA4OTk5MTMzNn0.11WpPNXEgs2uWbdgSpXK9wuZHQhYES9OipoRC68ruJA';
 
+// ── Edge Function URL (AI builder now routes through here) ──
+const EDGE_FN_URL = `${SUPABASE_URL}/functions/v1/ai-template`;
+
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 let currentUser = null, activeBizId = null, currentView = 'dashboard', viewParams = {};
-
 const BIZ_COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#db2777','#0891b2'];
 const BIZ_EMOJIS = ['🏢','🔧','🚚','⚙️','🏗️','💼','🌿','🔩','▶️','📚','🎙️','🎵','🛒','🏠','💡','⭐'];
 
@@ -535,8 +500,7 @@ async function renderTemplateDetail() {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <span style="font-weight:600;font-size:.82rem;color:var(--text);">Steps</span>
       <button class="btn btn-primary" style="font-size:.75rem;padding:5px 11px;" onclick="openModal('addStep','${t.id}')">+ Add Step</button>
-    </div>
-    <div class="step-list">`;
+    </div><div class="step-list">`;
   steps.forEach((step,i)=>{
     html+=`<div class="step-item">
       <div style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;background:var(--accent-light);border-radius:50%;font-size:.68rem;font-weight:700;flex-shrink:0;color:var(--accent);">${i+1}</div>
@@ -544,8 +508,7 @@ async function renderTemplateDetail() {
       <div class="step-actions">
         <button class="icon-btn" onclick="openModal('editStep','${t.id}',${i})">${iconEdit()}</button>
         <button class="icon-btn" onclick="deleteStep('${t.id}',${i})" style="color:var(--danger);">${iconTrash()}</button>
-      </div>
-    </div>`;
+      </div></div>`;
   });
   html+=`</div></div>`;
   document.getElementById('content').innerHTML=html;
@@ -566,8 +529,7 @@ async function renderRunDetail() {
     <div class="run-progress-sticky">
       <div class="run-pct-label"><span class="step-count">${done} of ${total} steps complete</span><span class="pct-num">${pct}%</span></div>
       <div class="run-progress-track"><div class="run-progress-fill${pct===100?' all-done':''}" id="run-prog-fill" style="width:${pct}%"></div></div>
-    </div>
-    <div class="step-list">`;
+    </div><div class="step-list">`;
   steps.forEach((step,i)=>{
     html+=`<div class="step-item${step.checked?' completed':''}" id="rs-${i}">
       <div class="step-check${step.checked?' checked':''}" onclick="toggleStep('${run.id}',${i})">
@@ -582,8 +544,7 @@ async function renderRunDetail() {
 }
 
 async function startRun(templateId) {
-  const {data:t}=await sb.from('templates').select('*').eq('id',templateId).single();
-  if(!t) return;
+  const {data:t}=await sb.from('templates').select('*').eq('id',templateId).single(); if(!t) return;
   const steps=(t.steps||[]).map(s=>({title:s.title,desc:s.desc||'',checked:false}));
   const run=await dbInsert('runs',{template_id:templateId,biz_id:t.biz_id,name:t.name+' — '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}),steps,status:'active'});
   if(run){toast('Run started!');navigate('run-detail',{id:run.id});}
@@ -603,11 +564,11 @@ async function toggleStep(runId,stepIndex) {
     if(!wasChecked){checkEl.classList.add('checked');itemEl.classList.add('completed','just-checked');setTimeout(()=>itemEl.classList.remove('just-checked'),350);}
     else{checkEl.classList.remove('checked');itemEl.classList.remove('completed');}
   }
-  const d=steps.filter(s=>s.checked).length, tot=steps.length, pct=tot?Math.round(d/tot*100):0;
+  const d=steps.filter(s=>s.checked).length,tot=steps.length,pct=tot?Math.round(d/tot*100):0;
   const fill=document.getElementById('run-prog-fill');
   if(fill){fill.style.width=pct+'%';fill.classList.toggle('all-done',pct===100);}
   const pn=document.querySelector('.pct-num'),sc=document.querySelector('.step-count');
-  if(pn) pn.textContent=pct+'%'; if(sc) sc.textContent=`${d} of ${tot} steps complete`;
+  if(pn)pn.textContent=pct+'%'; if(sc)sc.textContent=`${d} of ${tot} steps complete`;
   if(allDone&&!wasChecked) setTimeout(()=>launchConfetti(),250);
 }
 
@@ -619,39 +580,30 @@ async function completeRun(runId) {
 async function deleteRun(runId) { if(!confirm('Delete this run?'))return; await dbDelete('runs',runId); toast('Run deleted.'); navigate('runs'); }
 async function deleteTemplate(id) { if(!confirm('Delete this template?'))return; await dbDelete('templates',id); toast('Template deleted.'); navigate('templates'); }
 async function deleteStep(templateId,stepIndex) {
-  const {data:t}=await sb.from('templates').select('*').eq('id',templateId).single();
-  if(!t) return;
+  const {data:t}=await sb.from('templates').select('*').eq('id',templateId).single(); if(!t) return;
   const steps=[...(t.steps||[])]; steps.splice(stepIndex,1);
   await dbUpdate('templates',templateId,{steps}); renderTemplateDetail();
 }
 
-// ─── MODAL WITH CUSTOM COLOR PICKER ──────────────────────────
 function buildColorPicker(currentColor) {
-  const swatches = BIZ_COLORS.map(c => {
-    const isActive = c === currentColor;
-    return `<div class="color-swatch${isActive?' active':''}" style="background:${c};" onclick="selectBizColor('${c}',this)" title="${c}"></div>`;
-  }).join('');
-  const customActive = !BIZ_COLORS.includes(currentColor);
-  return `<div class="color-picker-row" id="color-picker-row">
-    ${swatches}
+  const swatches=BIZ_COLORS.map(c=>`<div class="color-swatch${c===currentColor?' active':''}" style="background:${c};" onclick="selectBizColor('${c}',this)" title="${c}"></div>`).join('');
+  const customActive=!BIZ_COLORS.includes(currentColor);
+  return `<div class="color-picker-row" id="color-picker-row">${swatches}
     <div class="color-swatch-custom${customActive?' active':''}" title="Custom color" onclick="this.querySelector('input').click()">
-      <input type="color" id="custom-color-input" value="${customActive?currentColor:'#10b981'}"
-        oninput="selectBizColor(this.value, this.parentNode)" onchange="selectBizColor(this.value, this.parentNode)"/>
+      <input type="color" id="custom-color-input" value="${customActive?currentColor:'#10b981'}" oninput="selectBizColor(this.value,this.parentNode)" onchange="selectBizColor(this.value,this.parentNode)"/>
     </div>
   </div>
   <input type="hidden" id="biz-color" value="${currentColor||BIZ_COLORS[0]}"/>`;
 }
-
-function selectBizColor(color, el) {
-  document.getElementById('biz-color').value = color;
-  document.querySelectorAll('.color-swatch, .color-swatch-custom').forEach(s => s.classList.remove('active'));
+function selectBizColor(color,el) {
+  document.getElementById('biz-color').value=color;
+  document.querySelectorAll('.color-swatch,.color-swatch-custom').forEach(s=>s.classList.remove('active'));
   el.classList.add('active');
 }
 
-async function openModal(type, ...args) {
+async function openModal(type,...args) {
   document.getElementById('modal-overlay').style.display='flex';
   const businesses=await dbGet('businesses');
-
   if(type==='newBiz') {
     document.getElementById('modal-title').textContent='Add Business';
     const emojis=BIZ_EMOJIS.map(e=>`<div class="chip" onclick="this.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));this.classList.add('active');document.getElementById('biz-emoji').value='${e}'">${e}</div>`).join('');
@@ -661,7 +613,6 @@ async function openModal(type, ...args) {
       <div><label>Color</label>${buildColorPicker(BIZ_COLORS[0])}</div>
       <div><label>Icon</label><div class="chip-row">${emojis}</div></div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveBiz()">Add Business</button>`;
-
   } else if(type==='newTemplate') {
     document.getElementById('modal-title').textContent='New Template';
     const bOpts=businesses.map(b=>`<option value="${b.id}" ${b.id===activeBizId?'selected':''}>${b.emoji||'🏢'} ${b.name}</option>`).join('');
@@ -671,7 +622,6 @@ async function openModal(type, ...args) {
       <div><label>Description (optional)</label><textarea id="tmpl-desc" rows="2" placeholder="What is this process for?"></textarea></div>
       <div><label>Business</label><select id="tmpl-biz">${bOpts}</select></div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveTemplate()">Create</button>`;
-
   } else if(type==='editTemplate') {
     const {data:t}=await sb.from('templates').select('*').eq('id',args[0]).single(); if(!t) return;
     document.getElementById('modal-title').textContent='Edit Template';
@@ -680,14 +630,12 @@ async function openModal(type, ...args) {
       <div><label>Type</label><select id="tmpl-type"><option value="workflow" ${t.type==='workflow'?'selected':''}>Workflow</option><option value="checklist" ${t.type==='checklist'?'selected':''}>Checklist</option><option value="daily" ${t.type==='daily'?'selected':''}>Daily</option></select></div>
       <div><label>Description</label><textarea id="tmpl-desc" rows="2">${t.description||''}</textarea></div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="updateTemplate('${t.id}')">Save</button>`;
-
   } else if(type==='addStep') {
     document.getElementById('modal-title').textContent='Add Step';
     document.getElementById('modal-body').innerHTML=`
       <div><label>Step Title</label><input id="step-title" placeholder="What needs to be done?"/></div>
       <div><label>Notes (optional)</label><textarea id="step-desc" rows="3" placeholder="Instructions, links, context..."></textarea></div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStep('${args[0]}')">Add Step</button>`;
-
   } else if(type==='editStep') {
     const {data:t}=await sb.from('templates').select('*').eq('id',args[0]).single();
     const step=(t?.steps||[])[args[1]]; if(!step) return;
@@ -725,9 +673,10 @@ async function updateStep(templateId,stepIndex) {
   steps[stepIndex]={...steps[stepIndex],title:document.getElementById('step-title').value.trim()||steps[stepIndex].title,desc:document.getElementById('step-desc').value.trim()};
   await dbUpdate('templates',templateId,{steps}); closeModal(); renderTemplateDetail();
 }
-function closeModal() { document.getElementById('modal-overlay').style.display='none'; }
-function closeModalOnOverlay(e) { if(e.target===document.getElementById('modal-overlay')) closeModal(); }
+function closeModal(){document.getElementById('modal-overlay').style.display='none';}
+function closeModalOnOverlay(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
 
+// ── AI MODAL — now calls Edge Function ────────────────────────
 async function openAIModal() {
   document.getElementById('modal-overlay').style.display='flex';
   document.getElementById('modal-title').textContent='✦ Ask AI to Build a Template';
@@ -751,9 +700,18 @@ async function runAI() {
   resultEl.innerHTML=`<div class="ai-panel"><div class="ai-typing"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span style="margin-left:3px;">Building your template...</span></div></div>`;
   document.querySelector('.modal-footer .btn-ai').disabled=true;
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are a workflow expert. Create a "${type}" template for: "${prompt}"\n\nRespond ONLY with valid JSON:\n{"name":"Template name","description":"One sentence description","steps":[{"title":"Step title","desc":"Optional notes"}]}\n\nGenerate 5-12 practical steps.`}]})});
-    const data=await res.json();
-    const parsed=JSON.parse(data.content?.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim());
+    const { data: { session } } = await sb.auth.getSession();
+    const res=await fetch(EDGE_FN_URL, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON,
+      },
+      body:JSON.stringify({prompt,type})
+    });
+    const parsed=await res.json();
+    if(parsed.error) throw new Error(parsed.error);
     resultEl.innerHTML=`<div class="ai-panel"><div class="ai-panel-title">✓ Ready: "${parsed.name}"</div><div style="font-size:.77rem;color:var(--muted);margin-bottom:7px;">${parsed.description}</div><div style="font-size:.76rem;color:var(--text2);line-height:1.8;">${parsed.steps.map((s,i)=>`<div>${i+1}. ${s.title}</div>`).join('')}</div></div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="openAIModal()">Try Again</button><button class="btn btn-primary" onclick="acceptAITemplate(${JSON.stringify(JSON.stringify({...parsed,type,bizId}))})">Add Template</button>`;
   } catch(e) {
@@ -788,11 +746,11 @@ function launchConfetti() {
   const colors=['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#0891b2','#ffffff','#f472b6'];
   const pieces=Array.from({length:120},()=>({x:Math.random()*canvas.width,y:-10-Math.random()*180,r:5+Math.random()*6,d:2+Math.random()*3,color:colors[Math.floor(Math.random()*colors.length)],angle:0,tiltSpeed:.1+Math.random()*.3,shape:Math.random()>.5?'rect':'circle',w:6+Math.random()*8,h:3+Math.random()*5}));
   let frame=0;const max=190;
-  function draw() {
+  function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     pieces.forEach(p=>{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle*Math.PI/180);ctx.fillStyle=p.color;ctx.globalAlpha=Math.max(0,1-frame/max);p.shape==='rect'?ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h):(ctx.beginPath(),ctx.arc(0,0,p.r/2,0,Math.PI*2),ctx.fill());ctx.restore();p.y+=p.d+Math.sin(p.angle)*.5;p.x+=Math.sin(p.angle*.5)*1.2;p.angle+=p.tiltSpeed;});
     frame++;
-    if(frame<max) requestAnimationFrame(draw);
+    if(frame<max)requestAnimationFrame(draw);
     else{ctx.clearRect(0,0,canvas.width,canvas.height);canvas.style.display='none';}
   }
   draw();
