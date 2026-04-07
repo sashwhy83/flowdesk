@@ -399,13 +399,16 @@ function toggleCsel(e) {
 }
 function selectType(value, el) {
   const opt = TYPE_OPTIONS.find(o=>o.value===value);
-  document.getElementById('tmpl-type').value = value;
-  const display = el.closest('.csel').querySelector('.csel-display');
+  // update whichever hidden input is in the same csel wrapper
+  const csel = el.closest('.csel');
+  const hidden = csel.querySelector('input[type="hidden"]');
+  if(hidden) hidden.value = value;
+  const display = csel.querySelector('.csel-display');
   display.querySelector('.csel-display-label').textContent = opt.label;
   display.querySelector('.csel-display-hint').textContent = '('+opt.hint+')';
-  el.closest('.csel-dropdown').querySelectorAll('.csel-option').forEach(o=>o.classList.remove('selected'));
+  csel.querySelectorAll('.csel-option').forEach(o=>o.classList.remove('selected'));
   el.classList.add('selected');
-  el.closest('.csel-dropdown').classList.remove('open');
+  csel.querySelector('.csel-dropdown').classList.remove('open');
 }
 document.addEventListener('click', ()=>document.querySelectorAll('.csel-dropdown.open').forEach(d=>d.classList.remove('open')));
 
@@ -918,14 +921,12 @@ async function openAIModal(){
   document.getElementById('modal-title').textContent='✦ Ask AI to Build a Template';
   const businesses=await dbGet('businesses');
   const bOpts=businesses.map(b=>`<option value="${b.id}" ${b.id===activeBizId?'selected':''}>${b.emoji||'🏢'} ${b.name}</option>`).join('');
+  const aiTypeHtml = typeSelectHTML('checklist').replace('id="tmpl-type"','id="ai-type"');
   document.getElementById('modal-body').innerHTML=`
     <div class="ai-panel"><div class="ai-panel-title">✦ Describe your process</div><div style="font-size:.77rem;color:var(--muted);line-height:1.5;">Tell me what checklist or workflow you need and I'll build it for you.</div></div>
     <div><label>What do you need?</label><textarea id="ai-prompt" rows="4" placeholder="e.g. 'Weekly truck maintenance checklist for our oilfield fleet'"></textarea></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div>
-        <label>Type</label>
-        <select id="ai-type"><option value="checklist">Checklist</option><option value="workflow">Workflow</option><option value="daily">Daily</option></select>
-      </div>
+      <div>${aiTypeHtml}</div>
       <div><label>Business</label><select id="ai-biz">${bOpts}</select></div>
     </div>
     <div id="ai-result"></div>`;
