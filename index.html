@@ -261,7 +261,6 @@ select option .hint { color: var(--muted2); font-size: .75rem; }
 .csel-display { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 11px; font-size: 0.82rem; transition: border-color .1s, box-shadow .1s; }
 .csel:hover .csel-display { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
 .csel-display-label { font-weight: 500; color: var(--text); white-space: nowrap; }
-.csel-display-hint { color: var(--muted2); font-size: .76rem; flex: 1; }
 .csel-arrow { margin-left: auto; color: var(--muted); flex-shrink: 0; }
 .csel-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-md); z-index: 200; overflow: hidden; }
 .csel-dropdown.open { display: block; }
@@ -269,7 +268,8 @@ select option .hint { color: var(--muted2); font-size: .75rem; }
 .csel-option:hover { background: var(--surface2); }
 .csel-option.selected { background: var(--accent-light); }
 .csel-label { font-size: .82rem; font-weight: 500; color: var(--text); white-space: nowrap; }
-.csel-hint { font-size: .76rem; color: var(--muted2); }
+.csel-hint { font-size: .76rem; color: var(--muted2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.csel-display-hint { color: var(--muted2); font-size: .76rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .divider { height: 1px; background: var(--border); margin: 4px 0; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -925,7 +925,7 @@ async function openAIModal(){
   document.getElementById('modal-body').innerHTML=`
     <div class="ai-panel"><div class="ai-panel-title">✦ Describe your process</div><div style="font-size:.77rem;color:var(--muted);line-height:1.5;">Tell me what checklist or workflow you need and I'll build it for you.</div></div>
     <div><label>What do you need?</label><textarea id="ai-prompt" rows="4" placeholder="e.g. 'Weekly truck maintenance checklist for our oilfield fleet'"></textarea></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div style="display:flex;flex-direction:column;gap:10px;">
       <div>${aiTypeHtml}</div>
       <div><label>Business</label><select id="ai-biz">${bOpts}</select></div>
     </div>
