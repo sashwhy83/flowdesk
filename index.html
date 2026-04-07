@@ -272,6 +272,17 @@ select option .hint { color: var(--muted2); font-size: .75rem; }
 .csel-display-hint { color: var(--muted2); font-size: .76rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* BIZ LOGO */
+.biz-logo { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+.logo-upload-area { border: 2px dashed var(--border2); border-radius: var(--radius); padding: 16px; text-align: center; cursor: pointer; transition: all .15s; margin-top: 6px; }
+.logo-upload-area:hover { border-color: var(--accent); background: var(--accent-light); }
+.logo-upload-preview { width: 80px; height: 80px; border-radius: var(--radius); object-fit: cover; border: 1px solid var(--border); margin: 0 auto 8px; display: block; }
+.logo-upload-hint { font-size: .75rem; color: var(--muted); }
+.logo-upload-warn { font-size: .75rem; color: var(--danger); margin-top: 5px; display: none; }
+.icon-tabs { display: flex; gap: 2px; background: var(--surface3); border-radius: var(--radius); padding: 3px; margin-bottom: 10px; }
+.icon-tab { flex: 1; text-align: center; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: .78rem; color: var(--muted); transition: all .1s; font-weight: 500; }
+.icon-tab.active { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: var(--shadow-sm); }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
@@ -509,7 +520,8 @@ async function renderSidebar(){
   businesses.forEach(b=>{
     const el=document.createElement('div');
     el.className='biz-item'+(activeBizId===b.id?' active':'');
-    el.innerHTML=`<div class="biz-dot" style="background:${b.color}"></div>${b.emoji||'🏢'} ${b.name}`;
+    const bizIcon = b.logoData ? `<img class="biz-logo" src="${b.logoData}" alt=""/>` : `<span>${b.emoji||'🏢'}</span>`;
+    el.innerHTML=`<div class="biz-dot" style="background:${b.color}"></div>${bizIcon} ${b.name}`;
     el.onclick=()=>{activeBizId=b.id;renderSidebar();renderMain();};
     list.appendChild(el);
   });
@@ -540,13 +552,15 @@ async function renderDashboard(){
     activeBizId?dbGet('runs',q=>q.eq('biz_id',activeBizId)):Promise.resolve([]),
   ]);
   const biz=businesses.find(b=>b.id===activeBizId);
-  setTopbar(biz?`${biz.emoji||'🏢'} ${biz.name}`:'Dashboard',`
+  const topbarIcon = biz ? (biz.logoData ? `<img style='width:16px;height:16px;border-radius:3px;object-fit:cover;vertical-align:middle;margin-right:3px;' src='${biz.logoData}'/>` : `${biz.emoji||'🏢'} `) : '';
+  setTopbar(biz?`${topbarIcon}${biz.name}`:'Dashboard',`
     <button class="btn btn-ai" onclick="openAIModal()">✦ Ask AI to Build</button>
     <button class="btn btn-primary" onclick="openModal('newTemplate')">+ New Template</button>
   `);
   if(!biz){setContent(`<div class="empty"><div class="empty-icon">🏢</div><h3>No business selected</h3><p>Add a business from the sidebar.</p></div>`);return;}
   const activeRuns=runs.filter(r=>r.status!=='done'),doneRuns=runs.filter(r=>r.status==='done');
-  let html=`<div class="page-header"><h2>${biz.emoji||'🏢'} ${biz.name}</h2><p>${templates.length} templates &bull; ${activeRuns.length} active runs</p></div>`;
+  const bizIconHtml = biz.logoData ? `<img style='width:22px;height:22px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:4px;' src='${biz.logoData}'/>` : `${biz.emoji||'🏢'} `;
+  let html=`<div class="page-header"><h2>${bizIconHtml}${biz.name}</h2><p>${templates.length} templates &bull; ${activeRuns.length} active runs</p></div>`;
   html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;">${statCard('Templates',templates.length,'var(--accent)')}${statCard('Active Runs',activeRuns.length,'var(--accent2)')}${statCard('Completed',doneRuns.length,'var(--success)')}</div>`;
   if(templates.length){
     html+=`<div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;"><span style="font-weight:600;font-size:.8rem;color:var(--text2);">Templates</span><button class="btn btn-ghost" style="font-size:.75rem;padding:4px 10px;" onclick="navigate('templates')">View all</button></div>`;
@@ -834,6 +848,74 @@ document.addEventListener('input',e=>{
   }
 });
 
+// ── ICON PICKER (emoji + logo upload) ────────────────────────
+function buildIconPicker(currentEmoji, currentLogo) {
+  const emojis = BIZ_EMOJIS.map(e => {
+    const isActive = (!currentLogo && e===currentEmoji) ? ' active' : '';
+    return `<div class="chip${isActive}" onclick="selectBizEmoji('${e}',this)">${e}</div>`;
+  }).join('');
+  const hasLogo = currentLogo ? true : false;
+  return `
+    <input type="hidden" id="biz-emoji" value="${currentEmoji||'🏢'}"/>
+    <input type="hidden" id="biz-logo-data" value="${currentLogo||''}"/>
+    <div class="icon-tabs">
+      <div class="icon-tab${!hasLogo?' active':''}" id="itab-emoji" onclick="switchIconTab('emoji')">Emoji</div>
+      <div class="icon-tab${hasLogo?' active':''}" id="itab-logo" onclick="switchIconTab('logo')">Upload Logo</div>
+    </div>
+    <div id="icon-panel-emoji" style="display:${hasLogo?'none':'block'}">
+      <div class="chip-row">${emojis}</div>
+    </div>
+    <div id="icon-panel-logo" style="display:${hasLogo?'block':'none'}">
+      ${currentLogo ? `<img class="logo-upload-preview" src="${currentLogo}" id="logo-preview"/>` : `<img class="logo-upload-preview" id="logo-preview" style="display:none"/>`}
+      <div class="logo-upload-area" onclick="document.getElementById('logo-file-input').click()">
+        <div class="logo-upload-hint">Click to upload logo<br/><span style="color:var(--muted2);font-size:.7rem;">Max 200×200px · Square (1:1) · PNG or JPG</span></div>
+      </div>
+      <input type="file" id="logo-file-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="handleLogoUpload(this)"/>
+      <div class="logo-upload-warn" id="logo-warn">⚠ Image is larger than 200×200px. Please use a smaller image.</div>
+      ${currentLogo ? `<button class="btn btn-ghost" style="font-size:.75rem;margin-top:8px;width:100%;" onclick="clearBizLogo()">Remove logo</button>` : ''}
+    </div>`;
+}
+function switchIconTab(tab) {
+  document.getElementById('itab-emoji').classList.toggle('active', tab==='emoji');
+  document.getElementById('itab-logo').classList.toggle('active', tab==='logo');
+  document.getElementById('icon-panel-emoji').style.display = tab==='emoji' ? 'block' : 'none';
+  document.getElementById('icon-panel-logo').style.display = tab==='logo' ? 'block' : 'none';
+}
+function selectBizEmoji(e, el) {
+  document.getElementById('biz-emoji').value = e;
+  document.getElementById('biz-logo-data').value = '';
+  document.querySelectorAll('#icon-panel-emoji .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+function handleLogoUpload(input) {
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const warn = document.getElementById('logo-warn');
+      if(img.width > 200 || img.height > 200) {
+        warn.style.display = 'block';
+        input.value = '';
+        return;
+      }
+      warn.style.display = 'none';
+      document.getElementById('biz-logo-data').value = e.target.result;
+      document.getElementById('biz-emoji').value = '';
+      const preview = document.getElementById('logo-preview');
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearBizLogo() {
+  document.getElementById('biz-logo-data').value = '';
+  const preview = document.getElementById('logo-preview');
+  if(preview) { preview.src=''; preview.style.display='none'; }
+}
+
 // ── MODALS ────────────────────────────────────────────────────
 async function openModal(type,...args){
   document.getElementById('modal-overlay').style.display='flex';
@@ -842,12 +924,10 @@ async function openModal(type,...args){
 
   if(type==='newBiz'){
     document.getElementById('modal-title').textContent='Add Business';
-    const emojis=BIZ_EMOJIS.map(e=>`<div class="chip" onclick="this.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));this.classList.add('active');document.getElementById('biz-emoji').value='${e}'">${e}</div>`).join('');
     document.getElementById('modal-body').innerHTML=`
       <div><label>Business Name</label><input id="biz-name" placeholder="e.g. Yonder Audiobooks"/></div>
-      <input type="hidden" id="biz-emoji" value="🏢"/>
       <div><label>Color</label>${buildColorPicker(BIZ_COLORS[0])}</div>
-      <div><label>Icon</label><div class="chip-row">${emojis}</div></div>`;
+      <div><label>Icon</label>${buildIconPicker('🏢', null)}</div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveBiz()">Add Business</button>`;
 
   } else if(type==='newTemplate'){
@@ -886,7 +966,9 @@ async function openModal(type,...args){
 
 async function saveBiz(){
   const name=document.getElementById('biz-name').value.trim(); if(!name){alert('Enter a name.');return;}
-  const biz=await dbInsert('businesses',{name,color:document.getElementById('biz-color').value,emoji:document.getElementById('biz-emoji').value});
+  const logoData=document.getElementById('biz-logo-data')?document.getElementById('biz-logo-data').value:'';
+  const emoji=document.getElementById('biz-emoji')?document.getElementById('biz-emoji').value:'🏢';
+  const biz=await dbInsert('businesses',{name,color:document.getElementById('biz-color').value,emoji,logoData:logoData||null});
   if(biz){activeBizId=biz.id;closeModal();toast('Business added!');renderSidebar();navigate('dashboard');}
 }
 async function saveTemplate(){
