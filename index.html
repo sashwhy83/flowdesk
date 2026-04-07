@@ -799,7 +799,7 @@ async function openModal(type,...args) {
     const bOpts=businesses.map(b=>`<option value="${b.id}" ${b.id===activeBizId?'selected':''}>${b.emoji||'🏢'} ${b.name}</option>`).join('');
     document.getElementById('modal-body').innerHTML=`
       <div><label>Template Name</label><input id="tmpl-name" placeholder="e.g. Monthly Invoice Process"/></div>
-      <div><label>Type</label><select id="tmpl-type"><option value="workflow">Workflow</option><option value="checklist">Checklist</option><option value="daily">Daily</option></select></div>
+      <option value="workflow">Workflow (one project at a time — launching a product, planning an event, onboarding a new hire)</option><option value="checklist">Checklist (one situation at a time — shipping an order, inspecting equipment, preparing for a meeting)</option><option value="daily">Daily (same routine on repeat — morning routine, weekly reset, end-of-day wrap-up)</option>
       <div><label>Description (optional)</label><textarea id="tmpl-desc" rows="2" placeholder="What is this process for?"></textarea></div>
       <div><label>Business</label><select id="tmpl-biz">${bOpts}</select></div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveTemplate()">Create</button>`;
@@ -881,7 +881,7 @@ async function openAIModal() {
     <div class="ai-panel"><div class="ai-panel-title">✦ Describe your process</div><div style="font-size:.77rem;color:var(--muted);line-height:1.5;">Tell me what checklist or workflow you need and I'll build it for you.</div></div>
     <div><label>What do you need?</label><textarea id="ai-prompt" rows="4" placeholder="e.g. 'Weekly truck maintenance checklist for our oilfield fleet'"></textarea></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div><label>Type</label><select id="ai-type"><option value="checklist">Checklist</option><option value="workflow">Workflow</option><option value="daily">Daily</option></select></div>
+      <option value="workflow">Workflow (one project at a time — launching a product, planning an event, onboarding a new hire)</option><option value="checklist">Checklist (one situation at a time — shipping an order, inspecting equipment, preparing for a meeting)</option><option value="daily">Daily (same routine on repeat — morning routine, weekly reset, end-of-day wrap-up)</option>
       <div><label>Business</label><select id="ai-biz">${bOpts}</select></div>
     </div>
     <div id="ai-result"></div>`;
