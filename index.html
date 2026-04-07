@@ -142,7 +142,7 @@ body {
 .badge-run { background: var(--success-light); color: var(--success); }
 .badge-open { background: var(--accent-light); color: var(--accent); }
 
-/* DETAIL PANEL — full width within centered content */
+/* DETAIL PANEL */
 .detail-panel { width: 100%; }
 .detail-back { cursor: pointer; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 500; transition: color .1s; margin-bottom: 2px; }
 .detail-back:hover { color: var(--accent); }
@@ -175,11 +175,6 @@ body {
 .icon-btn { background: none; border: none; cursor: pointer; color: var(--muted2); padding: 3px; border-radius: 4px; display: flex; align-items: center; transition: all .1s; }
 .icon-btn:hover { color: var(--text2); background: var(--surface3); }
 
-/* drag handle for reordering */
-.drag-handle { cursor: grab; color: var(--muted2); padding: 2px; display: flex; align-items: center; flex-shrink: 0; opacity: 0; transition: opacity .1s; }
-.step-item:hover .drag-handle { opacity: 1; }
-.drag-handle:active { cursor: grabbing; }
-
 /* PROGRESS BAR */
 .run-progress-sticky { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 12px 0 16px; }
 .run-progress-track { height: 6px; background: var(--surface3); border-radius: 6px; overflow: hidden; }
@@ -200,6 +195,10 @@ label { font-size: 0.76rem; color: var(--text2); font-weight: 600; display: bloc
 input, textarea, select { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: var(--radius); padding: 8px 11px; font-family: 'Inter', sans-serif; font-size: 0.82rem; outline: none; transition: border-color .1s, box-shadow .1s; resize: vertical; }
 input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
 select option { background: var(--surface); }
+
+/* subtle help text in select options */
+select option .hint { color: var(--muted2); font-size: .75rem; }
+
 .field-hint { font-size: .72rem; color: var(--muted); margin-top: 4px; }
 
 /* AI PANEL */
@@ -249,6 +248,13 @@ select option { background: var(--surface); }
 
 /* IMAGE PREVIEW in modal */
 .img-preview { max-width: 100%; max-height: 160px; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--border); margin-top: 6px; display: none; }
+
+/* TYPE SELECT — custom styled to show hint text subtly */
+.type-select-wrap { position: relative; }
+.type-select-wrap select { width: 100%; }
+.type-hints { margin-top: 5px; display: flex; flex-direction: column; gap: 2px; }
+.type-hint { font-size: .71rem; color: var(--muted2); line-height: 1.4; }
+.type-hint strong { color: var(--text2); font-weight: 600; }
 
 .divider { height: 1px; background: var(--border); margin: 4px 0; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -341,23 +347,39 @@ let pendingAITemplate = null;
 const BIZ_COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#db2777','#0891b2'];
 const BIZ_EMOJIS = ['🏢','🔧','🚚','⚙️','🏗️','💼','🌿','🔩','▶️','📚','🎙️','🎵','🛒','🏠','💡','⭐'];
 
-// ── HELPERS ──────────────────────────────────────────────────
-function setContent(html) {
-  const el = document.getElementById('content');
-  el.innerHTML = `<div class="content-inner">${html}</div>`;
+// ── TYPE SELECT HTML (reused in multiple modals) ──────────────
+function typeSelectHTML(selected='workflow') {
+  return `
+    <div>
+      <label>Type</label>
+      <select id="tmpl-type">
+        <option value="workflow" ${selected==='workflow'?'selected':''}>Workflow</option>
+        <option value="checklist" ${selected==='checklist'?'selected':''}>Checklist</option>
+        <option value="daily" ${selected==='daily'?'selected':''}>Daily</option>
+      </select>
+      <div class="type-hints">
+        <div class="type-hint"><strong>Workflow</strong> — one project at a time (launching a product, planning an event, onboarding a new hire)</div>
+        <div class="type-hint"><strong>Checklist</strong> — one situation at a time (shipping an order, inspecting equipment, preparing for a meeting)</div>
+        <div class="type-hint"><strong>Daily</strong> — same routine on repeat (morning routine, weekly reset, end-of-day wrap-up)</div>
+      </div>
+    </div>`;
 }
 
-function toast(msg, type='success') {
-  const t = document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
-  document.body.appendChild(t); setTimeout(()=>t.remove(), 2600);
+// ── HELPERS ───────────────────────────────────────────────────
+function setContent(html) {
+  document.getElementById('content').innerHTML = `<div class="content-inner">${html}</div>`;
 }
-function show(id) { document.getElementById(id).style.display='flex'; }
-function hide(id) { document.getElementById(id).style.display='none'; }
-function iconEdit() { return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`; }
-function iconTrash() { return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`; }
-function iconUp() { return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>`; }
-function iconDown() { return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>`; }
-function iconLink() { return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`; }
+function toast(msg, type='success') {
+  const t=document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2600);
+}
+function show(id){document.getElementById(id).style.display='flex';}
+function hide(id){document.getElementById(id).style.display='none';}
+function iconEdit(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;}
+function iconTrash(){return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;}
+function iconUp(){return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>`;}
+function iconDown(){return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>`;}
+function iconLink(){return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;}
 
 // ── BOOT ─────────────────────────────────────────────────────
 async function boot() {
@@ -370,133 +392,131 @@ async function boot() {
     else { currentUser = null; showAuthScreen(); }
   });
 }
-
 function showApp() {
   hide('auth-screen');
-  const app = document.getElementById('app'); app.style.display = 'flex';
-  const emailEl = document.getElementById('user-email'), avatarEl = document.getElementById('user-avatar');
-  if (emailEl) emailEl.textContent = currentUser.email;
-  if (avatarEl) avatarEl.textContent = (currentUser.email||'?')[0].toUpperCase();
+  const app=document.getElementById('app'); app.style.display='flex';
+  const emailEl=document.getElementById('user-email'), avatarEl=document.getElementById('user-avatar');
+  if(emailEl) emailEl.textContent=currentUser.email;
+  if(avatarEl) avatarEl.textContent=(currentUser.email||'?')[0].toUpperCase();
   renderSidebar(); renderMain();
 }
-function showAuthScreen() { document.getElementById('app').style.display='none'; show('auth-screen'); }
+function showAuthScreen(){document.getElementById('app').style.display='none'; show('auth-screen');}
 
 // ── AUTH ─────────────────────────────────────────────────────
-let authMode = 'signin';
-function switchAuthTab(mode) {
-  authMode = mode;
-  document.getElementById('tab-signin').classList.toggle('active', mode==='signin');
-  document.getElementById('tab-signup').classList.toggle('active', mode==='signup');
-  document.getElementById('auth-submit-btn').textContent = mode==='signin' ? 'Sign In' : 'Create Account';
-  document.getElementById('auth-message').innerHTML = '';
+let authMode='signin';
+function switchAuthTab(mode){
+  authMode=mode;
+  document.getElementById('tab-signin').classList.toggle('active',mode==='signin');
+  document.getElementById('tab-signup').classList.toggle('active',mode==='signup');
+  document.getElementById('auth-submit-btn').textContent=mode==='signin'?'Sign In':'Create Account';
+  document.getElementById('auth-message').innerHTML='';
 }
-async function submitAuth() {
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  const btn = document.getElementById('auth-submit-btn');
-  if (!email || !password) { showAuthMsg('Please enter your email and password.', 'error'); return; }
-  btn.disabled = true;
-  btn.textContent = authMode === 'signin' ? 'Signing in…' : 'Creating account…';
-  document.getElementById('auth-message').innerHTML = '';
-  if (authMode === 'signin') {
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) { showAuthMsg(error.message, 'error'); btn.disabled=false; btn.textContent='Sign In'; }
+async function submitAuth(){
+  const email=document.getElementById('auth-email').value.trim();
+  const password=document.getElementById('auth-password').value;
+  const btn=document.getElementById('auth-submit-btn');
+  if(!email||!password){showAuthMsg('Please enter your email and password.','error');return;}
+  btn.disabled=true;
+  btn.textContent=authMode==='signin'?'Signing in…':'Creating account…';
+  document.getElementById('auth-message').innerHTML='';
+  if(authMode==='signin'){
+    const{error}=await sb.auth.signInWithPassword({email,password});
+    if(error){showAuthMsg(error.message,'error');btn.disabled=false;btn.textContent='Sign In';}
   } else {
-    const { error } = await sb.auth.signUp({ email, password });
-    if (error) { showAuthMsg(error.message, 'error'); btn.disabled=false; btn.textContent='Create Account'; }
-    else { showAuthMsg('Account created! Check your email to confirm, then sign in.', 'success'); switchAuthTab('signin'); btn.disabled=false; }
+    const{error}=await sb.auth.signUp({email,password});
+    if(error){showAuthMsg(error.message,'error');btn.disabled=false;btn.textContent='Create Account';}
+    else{showAuthMsg('Account created! Check your email to confirm, then sign in.','success');switchAuthTab('signin');btn.disabled=false;}
   }
 }
-function showAuthMsg(msg, type) { document.getElementById('auth-message').innerHTML = `<div class="auth-${type}">${msg}</div>`; }
-async function signOut() { await sb.auth.signOut(); activeBizId=null; currentView='dashboard'; }
+function showAuthMsg(msg,type){document.getElementById('auth-message').innerHTML=`<div class="auth-${type}">${msg}</div>`;}
+async function signOut(){await sb.auth.signOut();activeBizId=null;currentView='dashboard';}
 
 // ── DB ────────────────────────────────────────────────────────
-async function dbGet(table, extraQuery) {
-  let q = sb.from(table).select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
-  if (extraQuery) q = extraQuery(q);
-  const { data, error } = await q;
-  if (error) { toast('Error loading: ' + error.message, 'error'); return []; }
-  return data || [];
+async function dbGet(table,extraQuery){
+  let q=sb.from(table).select('*').eq('user_id',currentUser.id).order('created_at',{ascending:true});
+  if(extraQuery) q=extraQuery(q);
+  const{data,error}=await q;
+  if(error){toast('Error loading: '+error.message,'error');return[];}
+  return data||[];
 }
-async function dbInsert(table, row) {
-  const { data, error } = await sb.from(table).insert({ ...row, user_id: currentUser.id }).select().single();
-  if (error) { toast('Error saving: ' + error.message, 'error'); return null; }
+async function dbInsert(table,row){
+  const{data,error}=await sb.from(table).insert({...row,user_id:currentUser.id}).select().single();
+  if(error){toast('Error saving: '+error.message,'error');return null;}
   return data;
 }
-async function dbUpdate(table, id, updates) {
-  const { error } = await sb.from(table).update(updates).eq('id', id).eq('user_id', currentUser.id);
-  if (error) toast('Error updating: ' + error.message, 'error');
+async function dbUpdate(table,id,updates){
+  const{error}=await sb.from(table).update(updates).eq('id',id).eq('user_id',currentUser.id);
+  if(error) toast('Error updating: '+error.message,'error');
 }
-async function dbDelete(table, id) {
-  const { error } = await sb.from(table).delete().eq('id', id).eq('user_id', currentUser.id);
-  if (error) toast('Error deleting: ' + error.message, 'error');
+async function dbDelete(table,id){
+  const{error}=await sb.from(table).delete().eq('id',id).eq('user_id',currentUser.id);
+  if(error) toast('Error deleting: '+error.message,'error');
 }
 
 // ── SIDEBAR ───────────────────────────────────────────────────
-async function renderSidebar() {
-  const businesses = await dbGet('businesses');
-  if (!activeBizId && businesses.length > 0) activeBizId = businesses[0].id;
-  const list = document.getElementById('biz-list'); if (!list) return;
-  list.innerHTML = '';
-  businesses.forEach(b => {
-    const el = document.createElement('div');
-    el.className = 'biz-item' + (activeBizId === b.id ? ' active' : '');
-    el.innerHTML = `<div class="biz-dot" style="background:${b.color}"></div>${b.emoji||'🏢'} ${b.name}`;
-    el.onclick = () => { activeBizId = b.id; renderSidebar(); renderMain(); };
+async function renderSidebar(){
+  const businesses=await dbGet('businesses');
+  if(!activeBizId&&businesses.length>0) activeBizId=businesses[0].id;
+  const list=document.getElementById('biz-list'); if(!list) return;
+  list.innerHTML='';
+  businesses.forEach(b=>{
+    const el=document.createElement('div');
+    el.className='biz-item'+(activeBizId===b.id?' active':'');
+    el.innerHTML=`<div class="biz-dot" style="background:${b.color}"></div>${b.emoji||'🏢'} ${b.name}`;
+    el.onclick=()=>{activeBizId=b.id;renderSidebar();renderMain();};
     list.appendChild(el);
   });
 }
 
 // ── NAVIGATION ────────────────────────────────────────────────
-function navigate(view, params={}) {
-  currentView = view; viewParams = params;
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const el = document.getElementById('nav-' + view.split('-')[0]);
-  if (el) el.classList.add('active');
+function navigate(view,params={}){
+  currentView=view; viewParams=params;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el=document.getElementById('nav-'+view.split('-')[0]);
+  if(el) el.classList.add('active');
   renderMain();
 }
-function renderMain() {
-  ({dashboard:renderDashboard, templates:renderTemplates, runs:renderRuns,
-    'template-detail':renderTemplateDetail, 'run-detail':renderRunDetail}[currentView]||renderDashboard)();
+function renderMain(){
+  ({dashboard:renderDashboard,templates:renderTemplates,runs:renderRuns,'template-detail':renderTemplateDetail,'run-detail':renderRunDetail}[currentView]||renderDashboard)();
 }
-function setTopbar(title, actions) {
-  document.getElementById('topbar-title').textContent = title;
-  document.getElementById('topbar-actions').innerHTML = actions;
+function setTopbar(title,actions){
+  document.getElementById('topbar-title').textContent=title;
+  document.getElementById('topbar-actions').innerHTML=actions;
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────
-async function renderDashboard() {
+async function renderDashboard(){
   setTopbar('Loading…','');
-  const [businesses, templates, runs] = await Promise.all([
+  const[businesses,templates,runs]=await Promise.all([
     dbGet('businesses'),
-    activeBizId ? dbGet('templates', q=>q.eq('biz_id',activeBizId)) : Promise.resolve([]),
-    activeBizId ? dbGet('runs', q=>q.eq('biz_id',activeBizId)) : Promise.resolve([]),
+    activeBizId?dbGet('templates',q=>q.eq('biz_id',activeBizId)):Promise.resolve([]),
+    activeBizId?dbGet('runs',q=>q.eq('biz_id',activeBizId)):Promise.resolve([]),
   ]);
-  const biz = businesses.find(b=>b.id===activeBizId);
+  const biz=businesses.find(b=>b.id===activeBizId);
   setTopbar(biz?`${biz.emoji||'🏢'} ${biz.name}`:'Dashboard',`
     <button class="btn btn-ai" onclick="openAIModal()">✦ Ask AI to Build</button>
     <button class="btn btn-primary" onclick="openModal('newTemplate')">+ New Template</button>
   `);
-  if (!biz) { setContent(`<div class="empty"><div class="empty-icon">🏢</div><h3>No business selected</h3><p>Add a business from the sidebar.</p></div>`); return; }
-  const activeRuns=runs.filter(r=>r.status!=='done'), doneRuns=runs.filter(r=>r.status==='done');
+  if(!biz){setContent(`<div class="empty"><div class="empty-icon">🏢</div><h3>No business selected</h3><p>Add a business from the sidebar.</p></div>`);return;}
+  const activeRuns=runs.filter(r=>r.status!=='done'),doneRuns=runs.filter(r=>r.status==='done');
   let html=`<div class="page-header"><h2>${biz.emoji||'🏢'} ${biz.name}</h2><p>${templates.length} templates &bull; ${activeRuns.length} active runs</p></div>`;
   html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;">${statCard('Templates',templates.length,'var(--accent)')}${statCard('Active Runs',activeRuns.length,'var(--accent2)')}${statCard('Completed',doneRuns.length,'var(--success)')}</div>`;
-  if (templates.length) {
+  if(templates.length){
     html+=`<div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;"><span style="font-weight:600;font-size:.8rem;color:var(--text2);">Templates</span><button class="btn btn-ghost" style="font-size:.75rem;padding:4px 10px;" onclick="navigate('templates')">View all</button></div>`;
     html+=`<div class="grid-3">${templates.slice(0,6).map(t=>templateCard(t,runs)).join('')}</div>`;
   } else {
     html+=`<div class="empty"><div class="empty-icon">📋</div><h3>No templates yet</h3><p>Create a template or ask AI to build one.</p><div style="margin-top:14px;display:flex;gap:8px;justify-content:center;"><button class="btn btn-ai" onclick="openAIModal()">✦ Ask AI</button><button class="btn btn-primary" onclick="openModal('newTemplate')">+ New Template</button></div></div>`;
   }
-  if (activeRuns.length) {
+  if(activeRuns.length){
     html+=`<div style="margin:24px 0 10px;display:flex;align-items:center;justify-content:space-between;"><span style="font-weight:600;font-size:.8rem;color:var(--text2);">Active Runs</span><button class="btn btn-ghost" style="font-size:.75rem;padding:4px 10px;" onclick="navigate('runs')">View all</button></div>`;
     html+=`<div class="grid-3">${activeRuns.slice(0,3).map(r=>runCard(r,templates)).join('')}</div>`;
   }
   setContent(html);
 }
 
-function statCard(label,val,color) { return `<div class="stat-card"><div class="stat-num" style="color:${color}">${val}</div><div class="stat-label">${label}</div></div>`; }
+function statCard(label,val,color){return `<div class="stat-card"><div class="stat-num" style="color:${color}">${val}</div><div class="stat-label">${label}</div></div>`;}
 
-function templateCard(t, runs=[]) {
+function templateCard(t,runs=[]){
   const active=runs.filter(r=>r.template_id===t.id&&r.status!=='done').length;
   const tag={workflow:'tag-workflow',daily:'tag-daily',checklist:'tag-checklist'}[t.type]||'tag-workflow';
   const label={workflow:'Workflow',daily:'Daily',checklist:'Checklist'}[t.type]||t.type;
@@ -512,9 +532,9 @@ function templateCard(t, runs=[]) {
   </div>`;
 }
 
-function runCard(r, templates=[]) {
+function runCard(r,templates=[]){
   const tpl=templates.find(t=>t.id===r.template_id);
-  const steps=r.steps||[], done=steps.filter(s=>s.checked).length, total=steps.length;
+  const steps=r.steps||[],done=steps.filter(s=>s.checked).length,total=steps.length;
   const pct=total?Math.round(done/total*100):0;
   return `<div class="card" onclick="navigate('run-detail',{id:'${r.id}'})">
     <div style="display:flex;align-items:center;justify-content:space-between;"><span class="badge badge-open">In Progress</span><span style="font-size:.72rem;color:var(--muted);">${done}/${total}</span></div>
@@ -526,9 +546,9 @@ function runCard(r, templates=[]) {
 }
 
 // ── TEMPLATES ─────────────────────────────────────────────────
-async function renderTemplates() {
+async function renderTemplates(){
   setTopbar('Templates',`<button class="btn btn-ai" onclick="openAIModal()">✦ Ask AI to Build</button><button class="btn btn-primary" onclick="openModal('newTemplate')">+ New Template</button>`);
-  const [templates,runs]=await Promise.all([
+  const[templates,runs]=await Promise.all([
     activeBizId?dbGet('templates',q=>q.eq('biz_id',activeBizId)):Promise.resolve([]),
     activeBizId?dbGet('runs',q=>q.eq('biz_id',activeBizId)):Promise.resolve([]),
   ]);
@@ -539,24 +559,24 @@ async function renderTemplates() {
 }
 
 // ── RUNS ──────────────────────────────────────────────────────
-async function renderRuns() {
+async function renderRuns(){
   setTopbar('Active Runs','');
-  const [runs,templates]=await Promise.all([
+  const[runs,templates]=await Promise.all([
     activeBizId?dbGet('runs',q=>q.eq('biz_id',activeBizId)):Promise.resolve([]),
     activeBizId?dbGet('templates',q=>q.eq('biz_id',activeBizId)):Promise.resolve([]),
   ]);
-  const active=runs.filter(r=>r.status!=='done'), done=runs.filter(r=>r.status==='done');
+  const active=runs.filter(r=>r.status!=='done'),done=runs.filter(r=>r.status==='done');
   let html=`<div class="page-header"><h2>Runs</h2><p>Active checklist and workflow instances.</p></div>`;
   html+=`<div class="tabs"><div class="tab active" id="tab-active" onclick="switchRunTab('active')">Active (${active.length})</div><div class="tab" id="tab-done" onclick="switchRunTab('done')">Completed (${done.length})</div></div>`;
   html+=`<div id="run-tab-content">${renderRunList(active,templates,'No active runs.')}</div>`;
   setContent(html);
   document.getElementById('content')._runData={runs,templates};
 }
-function renderRunList(runs,templates,emptyMsg) {
+function renderRunList(runs,templates,emptyMsg){
   if(!runs.length) return `<div class="empty"><div class="empty-icon">🕐</div><h3>${emptyMsg}</h3><p>Start a template run from Templates.</p></div>`;
   return `<div class="grid-3">${runs.map(r=>runCard(r,templates)).join('')}</div>`;
 }
-function switchRunTab(which) {
+function switchRunTab(which){
   const data=document.getElementById('content')._runData||{runs:[],templates:[]};
   document.getElementById('tab-active').classList.toggle('active',which==='active');
   document.getElementById('tab-done').classList.toggle('active',which==='done');
@@ -564,23 +584,19 @@ function switchRunTab(which) {
   document.getElementById('run-tab-content').innerHTML=renderRunList(list,data.templates,which==='done'?'No completed runs.':'No active runs.');
 }
 
-// ── RENDER STEP EXTRAS (links + image) ───────────────────────
-function renderStepExtras(step) {
-  let html = '';
-  if (step.desc) html += `<div class="step-desc">${step.desc}</div>`;
-  if (step.links && step.links.length) {
-    step.links.forEach(l => {
-      if (l.url) html += `<a class="step-link" href="${l.url}" target="_blank" rel="noopener">${iconLink()} ${l.label||l.url}</a>`;
-    });
-  }
-  if (step.imageUrl) html += `<img class="step-img" src="${step.imageUrl}" alt="Step image" onerror="this.style.display='none'"/>`;
+// ── STEP EXTRAS ───────────────────────────────────────────────
+function renderStepExtras(step){
+  let html='';
+  if(step.desc) html+=`<div class="step-desc">${step.desc}</div>`;
+  if(step.links&&step.links.length) step.links.forEach(l=>{if(l.url) html+=`<a class="step-link" href="${l.url}" target="_blank" rel="noopener">${iconLink()} ${l.label||l.url}</a>`;});
+  if(step.imageUrl) html+=`<img class="step-img" src="${step.imageUrl}" alt="Step image" onerror="this.style.display='none'"/>`;
   return html;
 }
 
 // ── TEMPLATE DETAIL ───────────────────────────────────────────
-async function renderTemplateDetail() {
+async function renderTemplateDetail(){
   setTopbar('Loading…','');
-  const {data:t}=await sb.from('templates').select('*').eq('id',viewParams.id).single();
+  const{data:t}=await sb.from('templates').select('*').eq('id',viewParams.id).single();
   if(!t){navigate('templates');return;}
   const tag={workflow:'tag-workflow',daily:'tag-daily',checklist:'tag-checklist'}[t.type]||'tag-workflow';
   const steps=t.steps||[];
@@ -599,7 +615,7 @@ async function renderTemplateDetail() {
     </div>
     <div class="step-list">`;
   steps.forEach((step,i)=>{
-    const isFirst = i===0, isLast = i===steps.length-1;
+    const isFirst=i===0,isLast=i===steps.length-1;
     html+=`<div class="step-item">
       <div style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;background:var(--accent-light);border-radius:50%;font-size:.68rem;font-weight:700;flex-shrink:0;color:var(--accent);">${i+1}</div>
       <div class="step-body">
@@ -619,12 +635,12 @@ async function renderTemplateDetail() {
 }
 
 // ── RUN DETAIL ────────────────────────────────────────────────
-async function renderRunDetail() {
+async function renderRunDetail(){
   setTopbar('Loading…','');
-  const {data:run}=await sb.from('runs').select('*').eq('id',viewParams.id).single();
+  const{data:run}=await sb.from('runs').select('*').eq('id',viewParams.id).single();
   if(!run){navigate('runs');return;}
-  const steps=run.steps||[], done=steps.filter(s=>s.checked).length, total=steps.length;
-  const pct=total?Math.round(done/total*100):0, isDone=run.status==='done';
+  const steps=run.steps||[],done=steps.filter(s=>s.checked).length,total=steps.length;
+  const pct=total?Math.round(done/total*100):0,isDone=run.status==='done';
   setTopbar(run.name,`
     ${!isDone?`<button class="btn btn-success" onclick="completeRun('${run.id}')">✓ Mark Complete</button>`:''}
     <button class="btn btn-danger" onclick="deleteRun('${run.id}')">Delete</button>
@@ -653,24 +669,22 @@ async function renderRunDetail() {
 }
 
 // ── ACTIONS ───────────────────────────────────────────────────
-async function startRun(templateId) {
-  const {data:t}=await sb.from('templates').select('*').eq('id',templateId).single(); if(!t) return;
-  const steps=(t.steps||[]).map(s=>({...s, checked:false}));
+async function startRun(templateId){
+  const{data:t}=await sb.from('templates').select('*').eq('id',templateId).single(); if(!t) return;
+  const steps=(t.steps||[]).map(s=>({...s,checked:false}));
   const run=await dbInsert('runs',{template_id:templateId,biz_id:t.biz_id,name:t.name+' — '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}),steps,status:'active'});
   if(run){toast('Run started!');navigate('run-detail',{id:run.id});}
 }
-
-async function moveStep(templateId, index, direction) {
-  const {data:t}=await sb.from('templates').select('*').eq('id',templateId).single(); if(!t) return;
+async function moveStep(templateId,index,direction){
+  const{data:t}=await sb.from('templates').select('*').eq('id',templateId).single(); if(!t) return;
   const steps=[...(t.steps||[])];
-  const newIndex = index + direction;
-  if (newIndex < 0 || newIndex >= steps.length) return;
-  [steps[index], steps[newIndex]] = [steps[newIndex], steps[index]];
-  await dbUpdate('templates', templateId, {steps});
+  const newIndex=index+direction;
+  if(newIndex<0||newIndex>=steps.length) return;
+  [steps[index],steps[newIndex]]=[steps[newIndex],steps[index]];
+  await dbUpdate('templates',templateId,{steps});
   renderTemplateDetail();
 }
-
-async function toggleStep(runId,stepIndex) {
+async function toggleStep(runId,stepIndex){
   const steps=[...(document.getElementById('content')._runSteps||[])];
   const wasChecked=steps[stepIndex].checked;
   steps[stepIndex].checked=!wasChecked;
@@ -688,25 +702,24 @@ async function toggleStep(runId,stepIndex) {
   const fill=document.getElementById('run-prog-fill');
   if(fill){fill.style.width=pct+'%';fill.classList.toggle('all-done',pct===100);}
   const pn=document.querySelector('.pct-num'),sc=document.querySelector('.step-count');
-  if(pn)pn.textContent=pct+'%'; if(sc)sc.textContent=`${d} of ${tot} steps complete`;
+  if(pn) pn.textContent=pct+'%'; if(sc) sc.textContent=`${d} of ${tot} steps complete`;
   if(allDone&&!wasChecked) setTimeout(()=>launchConfetti(),250);
 }
-
-async function completeRun(runId) {
+async function completeRun(runId){
   const steps=(document.getElementById('content')._runSteps||[]).map(s=>({...s,checked:true}));
   await dbUpdate('runs',runId,{status:'done',steps});
   toast('Run complete! 🎉'); launchConfetti(); setTimeout(()=>navigate('runs'),1800);
 }
-async function deleteRun(runId) { if(!confirm('Delete this run?'))return; await dbDelete('runs',runId); toast('Run deleted.'); navigate('runs'); }
-async function deleteTemplate(id) { if(!confirm('Delete this template?'))return; await dbDelete('templates',id); toast('Template deleted.'); navigate('templates'); }
-async function deleteStep(templateId,stepIndex) {
-  const {data:t}=await sb.from('templates').select('*').eq('id',templateId).single(); if(!t) return;
+async function deleteRun(runId){if(!confirm('Delete this run?'))return;await dbDelete('runs',runId);toast('Run deleted.');navigate('runs');}
+async function deleteTemplate(id){if(!confirm('Delete this template?'))return;await dbDelete('templates',id);toast('Template deleted.');navigate('templates');}
+async function deleteStep(templateId,stepIndex){
+  const{data:t}=await sb.from('templates').select('*').eq('id',templateId).single(); if(!t) return;
   const steps=[...(t.steps||[])]; steps.splice(stepIndex,1);
   await dbUpdate('templates',templateId,{steps}); renderTemplateDetail();
 }
 
 // ── COLOR PICKER ──────────────────────────────────────────────
-function buildColorPicker(currentColor) {
+function buildColorPicker(currentColor){
   const swatches=BIZ_COLORS.map(c=>`<div class="color-swatch${c===currentColor?' active':''}" style="background:${c};" onclick="selectBizColor('${c}',this)" title="${c}"></div>`).join('');
   const customActive=!BIZ_COLORS.includes(currentColor);
   return `<div class="color-picker-row">${swatches}
@@ -716,16 +729,16 @@ function buildColorPicker(currentColor) {
   </div>
   <input type="hidden" id="biz-color" value="${currentColor||BIZ_COLORS[0]}"/>`;
 }
-function selectBizColor(color,el) {
+function selectBizColor(color,el){
   document.getElementById('biz-color').value=color;
   document.querySelectorAll('.color-swatch,.color-swatch-custom').forEach(s=>s.classList.remove('active'));
   el.classList.add('active');
 }
 
-// ── STEP MODAL BUILDER (shared for add + edit) ────────────────
-function buildStepModalBody(step={}) {
-  const links = step.links||[];
-  const linksHtml = links.map((l,i)=>`
+// ── STEP MODAL BUILDER ────────────────────────────────────────
+function buildStepModalBody(step={}){
+  const links=step.links||[];
+  const linksHtml=links.map((l,i)=>`
     <div style="display:flex;gap:6px;margin-bottom:6px;" id="link-row-${i}">
       <input placeholder="Label (e.g. Google Drive)" value="${l.label||''}" id="link-label-${i}" style="flex:1;"/>
       <input placeholder="https://..." value="${l.url||''}" id="link-url-${i}" style="flex:2;"/>
@@ -747,44 +760,40 @@ function buildStepModalBody(step={}) {
     </div>`;
 }
 
-let linkRowCount = 0;
-function addLinkRow() {
-  const container = document.getElementById('link-rows');
-  const i = linkRowCount++;
-  const div = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;';
-  div.id = `link-row-${i}`;
-  div.innerHTML = `<input placeholder="Label (e.g. Google Drive)" id="link-label-${i}" style="flex:1;"/><input placeholder="https://..." id="link-url-${i}" style="flex:2;"/><button class="btn btn-danger" style="padding:5px 8px;font-size:.75rem;" onclick="removeLinkRow(${i})">✕</button>`;
+let linkRowCount=0;
+function addLinkRow(){
+  const container=document.getElementById('link-rows');
+  const i=linkRowCount++;
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:6px;margin-bottom:6px;';
+  div.id=`link-row-${i}`;
+  div.innerHTML=`<input placeholder="Label (e.g. Google Drive)" id="link-label-${i}" style="flex:1;"/><input placeholder="https://..." id="link-url-${i}" style="flex:2;"/><button class="btn btn-danger" style="padding:5px 8px;font-size:.75rem;" onclick="removeLinkRow(${i})">✕</button>`;
   container.appendChild(div);
 }
-function removeLinkRow(i) {
-  const el = document.getElementById('link-row-'+i); if(el) el.remove();
+function removeLinkRow(i){const el=document.getElementById('link-row-'+i);if(el)el.remove();}
+function collectLinks(){
+  const rows=document.querySelectorAll('#link-rows > div[id^="link-row-"]');
+  return Array.from(rows).map(row=>{
+    const idx=row.id.replace('link-row-','');
+    const label=(document.getElementById('link-label-'+idx)||{}).value||'';
+    const url=(document.getElementById('link-url-'+idx)||{}).value||'';
+    return{label,url};
+  }).filter(l=>l.url.trim());
 }
-function collectLinks() {
-  const rows = document.querySelectorAll('#link-rows > div[id^="link-row-"]');
-  return Array.from(rows).map(row => {
-    const idx = row.id.replace('link-row-','');
-    const label = (document.getElementById('link-label-'+idx)||{}).value||'';
-    const url = (document.getElementById('link-url-'+idx)||{}).value||'';
-    return { label, url };
-  }).filter(l => l.url.trim());
-}
-
-// live preview image URL
-document.addEventListener('input', e => {
-  if (e.target && e.target.id === 'step-image-url') {
-    const prev = document.querySelector('.img-preview');
-    if (prev) { prev.src = e.target.value; prev.style.display = e.target.value ? 'block' : 'none'; }
+document.addEventListener('input',e=>{
+  if(e.target&&e.target.id==='step-image-url'){
+    const prev=document.querySelector('.img-preview');
+    if(prev){prev.src=e.target.value;prev.style.display=e.target.value?'block':'none';}
   }
 });
 
 // ── MODALS ────────────────────────────────────────────────────
-async function openModal(type,...args) {
+async function openModal(type,...args){
   document.getElementById('modal-overlay').style.display='flex';
-  linkRowCount = 0;
+  linkRowCount=0;
   const businesses=await dbGet('businesses');
 
-  if(type==='newBiz') {
+  if(type==='newBiz'){
     document.getElementById('modal-title').textContent='Add Business';
     const emojis=BIZ_EMOJIS.map(e=>`<div class="chip" onclick="this.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));this.classList.add('active');document.getElementById('biz-emoji').value='${e}'">${e}</div>`).join('');
     document.getElementById('modal-body').innerHTML=`
@@ -794,85 +803,73 @@ async function openModal(type,...args) {
       <div><label>Icon</label><div class="chip-row">${emojis}</div></div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveBiz()">Add Business</button>`;
 
-  } else if(type==='newTemplate') {
+  } else if(type==='newTemplate'){
     document.getElementById('modal-title').textContent='New Template';
     const bOpts=businesses.map(b=>`<option value="${b.id}" ${b.id===activeBizId?'selected':''}>${b.emoji||'🏢'} ${b.name}</option>`).join('');
     document.getElementById('modal-body').innerHTML=`
       <div><label>Template Name</label><input id="tmpl-name" placeholder="e.g. Monthly Invoice Process"/></div>
-      <option value="workflow">Workflow (one project at a time — launching a product, planning an event, onboarding a new hire)</option><option value="checklist">Checklist (one situation at a time — shipping an order, inspecting equipment, preparing for a meeting)</option><option value="daily">Daily (same routine on repeat — morning routine, weekly reset, end-of-day wrap-up)</option>
+      ${typeSelectHTML('workflow')}
       <div><label>Description (optional)</label><textarea id="tmpl-desc" rows="2" placeholder="What is this process for?"></textarea></div>
       <div><label>Business</label><select id="tmpl-biz">${bOpts}</select></div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveTemplate()">Create</button>`;
 
-  } else if(type==='editTemplate') {
-    const {data:t}=await sb.from('templates').select('*').eq('id',args[0]).single(); if(!t) return;
+  } else if(type==='editTemplate'){
+    const{data:t}=await sb.from('templates').select('*').eq('id',args[0]).single(); if(!t) return;
     document.getElementById('modal-title').textContent='Edit Template';
     document.getElementById('modal-body').innerHTML=`
       <div><label>Name</label><input id="tmpl-name" value="${t.name}"/></div>
-      <div><label>Type</label><select id="tmpl-type"><option value="workflow" ${t.type==='workflow'?'selected':''}>Workflow</option><option value="checklist" ${t.type==='checklist'?'selected':''}>Checklist</option><option value="daily" ${t.type==='daily'?'selected':''}>Daily</option></select></div>
+      ${typeSelectHTML(t.type)}
       <div><label>Description</label><textarea id="tmpl-desc" rows="2">${t.description||''}</textarea></div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="updateTemplate('${t.id}')">Save</button>`;
 
-  } else if(type==='addStep') {
+  } else if(type==='addStep'){
     document.getElementById('modal-title').textContent='Add Step';
     document.getElementById('modal-body').innerHTML=buildStepModalBody();
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStep('${args[0]}')">Add Step</button>`;
 
-  } else if(type==='editStep') {
-    const {data:t}=await sb.from('templates').select('*').eq('id',args[0]).single();
+  } else if(type==='editStep'){
+    const{data:t}=await sb.from('templates').select('*').eq('id',args[0]).single();
     const step=(t?.steps||[])[args[1]]; if(!step) return;
-    // set linkRowCount to existing link count so new rows don't overlap
-    linkRowCount = (step.links||[]).length;
+    linkRowCount=(step.links||[]).length;
     document.getElementById('modal-title').textContent='Edit Step';
     document.getElementById('modal-body').innerHTML=buildStepModalBody(step);
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="updateStep('${args[0]}',${args[1]})">Save</button>`;
   }
 }
 
-async function saveBiz() {
+async function saveBiz(){
   const name=document.getElementById('biz-name').value.trim(); if(!name){alert('Enter a name.');return;}
   const biz=await dbInsert('businesses',{name,color:document.getElementById('biz-color').value,emoji:document.getElementById('biz-emoji').value});
   if(biz){activeBizId=biz.id;closeModal();toast('Business added!');renderSidebar();navigate('dashboard');}
 }
-async function saveTemplate() {
+async function saveTemplate(){
   const name=document.getElementById('tmpl-name').value.trim(); if(!name){alert('Enter a name.');return;}
   const t=await dbInsert('templates',{biz_id:document.getElementById('tmpl-biz').value,name,type:document.getElementById('tmpl-type').value,description:document.getElementById('tmpl-desc').value.trim(),steps:[]});
   if(t){closeModal();toast('Template created!');navigate('template-detail',{id:t.id});}
 }
-async function updateTemplate(id) {
+async function updateTemplate(id){
   await dbUpdate('templates',id,{name:document.getElementById('tmpl-name').value.trim(),type:document.getElementById('tmpl-type').value,description:document.getElementById('tmpl-desc').value.trim()});
   closeModal();toast('Saved!');renderTemplateDetail();
 }
-async function saveStep(templateId) {
+async function saveStep(templateId){
   const title=document.getElementById('step-title').value.trim(); if(!title){alert('Enter a title.');return;}
-  const {data:t}=await sb.from('templates').select('*').eq('id',templateId).single();
-  const newStep = {
-    title,
-    desc: document.getElementById('step-desc').value.trim(),
-    links: collectLinks(),
-    imageUrl: document.getElementById('step-image-url').value.trim()
-  };
-  const steps=[...(t?.steps||[]), newStep];
+  const{data:t}=await sb.from('templates').select('*').eq('id',templateId).single();
+  const newStep={title,desc:document.getElementById('step-desc').value.trim(),links:collectLinks(),imageUrl:document.getElementById('step-image-url').value.trim()};
+  const steps=[...(t?.steps||[]),newStep];
   await dbUpdate('templates',templateId,{steps}); closeModal(); renderTemplateDetail();
 }
-async function updateStep(templateId,stepIndex) {
-  const {data:t}=await sb.from('templates').select('*').eq('id',templateId).single();
+async function updateStep(templateId,stepIndex){
+  const{data:t}=await sb.from('templates').select('*').eq('id',templateId).single();
   const steps=[...(t?.steps||[])];
-  steps[stepIndex]={
-    ...steps[stepIndex],
-    title: document.getElementById('step-title').value.trim()||steps[stepIndex].title,
-    desc: document.getElementById('step-desc').value.trim(),
-    links: collectLinks(),
-    imageUrl: document.getElementById('step-image-url').value.trim()
-  };
+  steps[stepIndex]={...steps[stepIndex],title:document.getElementById('step-title').value.trim()||steps[stepIndex].title,desc:document.getElementById('step-desc').value.trim(),links:collectLinks(),imageUrl:document.getElementById('step-image-url').value.trim()};
   await dbUpdate('templates',templateId,{steps}); closeModal(); renderTemplateDetail();
 }
-function closeModal(){document.getElementById('modal-overlay').style.display='none'; linkRowCount=0;}
+function closeModal(){document.getElementById('modal-overlay').style.display='none';linkRowCount=0;}
 function closeModalOnOverlay(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
 
 // ── AI MODAL ──────────────────────────────────────────────────
-async function openAIModal() {
-  pendingAITemplate = null;
+async function openAIModal(){
+  pendingAITemplate=null;
   document.getElementById('modal-overlay').style.display='flex';
   document.getElementById('modal-title').textContent='✦ Ask AI to Build a Template';
   const businesses=await dbGet('businesses');
@@ -881,16 +878,19 @@ async function openAIModal() {
     <div class="ai-panel"><div class="ai-panel-title">✦ Describe your process</div><div style="font-size:.77rem;color:var(--muted);line-height:1.5;">Tell me what checklist or workflow you need and I'll build it for you.</div></div>
     <div><label>What do you need?</label><textarea id="ai-prompt" rows="4" placeholder="e.g. 'Weekly truck maintenance checklist for our oilfield fleet'"></textarea></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <option value="workflow">Workflow (one project at a time — launching a product, planning an event, onboarding a new hire)</option><option value="checklist">Checklist (one situation at a time — shipping an order, inspecting equipment, preparing for a meeting)</option><option value="daily">Daily (same routine on repeat — morning routine, weekly reset, end-of-day wrap-up)</option>
+      <div>
+        <label>Type</label>
+        <select id="ai-type"><option value="checklist">Checklist</option><option value="workflow">Workflow</option><option value="daily">Daily</option></select>
+      </div>
       <div><label>Business</label><select id="ai-biz">${bOpts}</select></div>
     </div>
     <div id="ai-result"></div>`;
   document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-ai" onclick="runAI()">✦ Generate</button>`;
 }
 
-async function runAI() {
+async function runAI(){
   const prompt=document.getElementById('ai-prompt').value.trim(); if(!prompt){alert('Describe what you need first.');return;}
-  const type=document.getElementById('ai-type').value, bizId=document.getElementById('ai-biz').value;
+  const type=document.getElementById('ai-type').value,bizId=document.getElementById('ai-biz').value;
   const resultEl=document.getElementById('ai-result');
   resultEl.innerHTML=`<div class="ai-panel"><div class="ai-typing"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span style="margin-left:3px;">Building your template...</span></div></div>`;
   document.querySelector('.modal-footer .btn-ai').disabled=true;
@@ -898,20 +898,20 @@ async function runAI() {
     const res=await fetch(EDGE_FN_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON},body:JSON.stringify({prompt,type})});
     const parsed=await res.json();
     if(parsed.error) throw new Error(parsed.error);
-    pendingAITemplate = {...parsed, type, bizId};
+    pendingAITemplate={...parsed,type,bizId};
     resultEl.innerHTML=`<div class="ai-panel">
       <div class="ai-panel-title">✓ Ready: "${parsed.name}"</div>
       <div style="font-size:.77rem;color:var(--muted);margin-bottom:7px;">${parsed.description}</div>
       <div style="font-size:.76rem;color:var(--text2);line-height:1.8;">${parsed.steps.map((s,i)=>`<div>${i+1}. ${s.title}</div>`).join('')}</div>
     </div>`;
     document.getElementById('modal-footer').innerHTML=`<button class="btn btn-ghost" onclick="openAIModal()">Try Again</button><button class="btn btn-primary" onclick="acceptAITemplate()">Add Template</button>`;
-  } catch(e) {
+  } catch(e){
     resultEl.innerHTML=`<div class="ai-panel" style="background:var(--danger-light);border-color:#fca5a5;"><div style="color:var(--danger);font-size:.8rem;">⚠ ${e.message}</div></div>`;
     document.querySelector('.modal-footer .btn-ai').disabled=false;
   }
 }
 
-async function acceptAITemplate() {
+async function acceptAITemplate(){
   if(!pendingAITemplate){toast('No template ready.','error');return;}
   const d=pendingAITemplate;
   const t=await dbInsert('templates',{biz_id:d.bizId,name:d.name,type:d.type,description:d.description,steps:d.steps.map(s=>({title:s.title,desc:s.desc||'',links:[],imageUrl:''}))});
@@ -919,8 +919,8 @@ async function acceptAITemplate() {
 }
 
 // ── SOUND + CONFETTI ──────────────────────────────────────────
-function playDing() {
-  try {
+function playDing(){
+  try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
     [880,1108.73].forEach((freq,i)=>{
       const osc=ctx.createOscillator(),gain=ctx.createGain();
@@ -931,8 +931,7 @@ function playDing() {
     });
   }catch(e){}
 }
-
-function launchConfetti() {
+function launchConfetti(){
   const canvas=document.getElementById('confetti-canvas');
   canvas.style.display='block';canvas.width=window.innerWidth;canvas.height=window.innerHeight;
   const ctx=canvas.getContext('2d');
