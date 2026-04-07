@@ -256,6 +256,21 @@ select option .hint { color: var(--muted2); font-size: .75rem; }
 .type-hint { font-size: .71rem; color: var(--muted2); line-height: 1.4; }
 .type-hint strong { color: var(--text2); font-weight: 600; }
 
+/* CUSTOM TYPE SELECT */
+.csel { position: relative; cursor: pointer; user-select: none; }
+.csel-display { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 11px; font-size: 0.82rem; transition: border-color .1s, box-shadow .1s; }
+.csel:hover .csel-display { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.csel-display-label { font-weight: 500; color: var(--text); white-space: nowrap; }
+.csel-display-hint { color: var(--muted2); font-size: .76rem; flex: 1; }
+.csel-arrow { margin-left: auto; color: var(--muted); flex-shrink: 0; }
+.csel-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-md); z-index: 200; overflow: hidden; }
+.csel-dropdown.open { display: block; }
+.csel-option { display: flex; align-items: center; gap: 6px; padding: 9px 12px; cursor: pointer; transition: background .1s; }
+.csel-option:hover { background: var(--surface2); }
+.csel-option.selected { background: var(--accent-light); }
+.csel-label { font-size: .82rem; font-weight: 500; color: var(--text); white-space: nowrap; }
+.csel-hint { font-size: .76rem; color: var(--muted2); }
+
 .divider { height: 1px; background: var(--border); margin: 4px 0; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -347,18 +362,52 @@ let pendingAITemplate = null;
 const BIZ_COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#db2777','#0891b2'];
 const BIZ_EMOJIS = ['🏢','🔧','🚚','⚙️','🏗️','💼','🌿','🔩','▶️','📚','🎙️','🎵','🛒','🏠','💡','⭐'];
 
-// ── TYPE SELECT HTML (reused in multiple modals) ──────────────
+// ── TYPE SELECT HTML (custom dropdown with faded hint text) ───
+const TYPE_OPTIONS = [
+  { value:'workflow',  label:'Workflow',  hint:'e.g. launching a product, onboarding a new hire' },
+  { value:'checklist', label:'Checklist', hint:'e.g. shipping an order, inspecting equipment' },
+  { value:'daily',     label:'Daily',     hint:'e.g. morning routine, weekly reset' },
+];
 function typeSelectHTML(selected='workflow') {
+  const current = TYPE_OPTIONS.find(o=>o.value===selected)||TYPE_OPTIONS[0];
+  const optionsHtml = TYPE_OPTIONS.map(o=>`
+    <div class="csel-option${o.value===selected?' selected':''}" data-value="${o.value}" onclick="selectType('${o.value}',this)">
+      <span class="csel-label">${o.label}</span>
+      <span class="csel-hint">(${o.hint})</span>
+    </div>`).join('');
   return `
     <div>
       <label>Type</label>
-      <select id="tmpl-type">
-        <option value="workflow" ${selected==='workflow'?'selected':''}>Workflow — launching a product, onboarding a new hire</option>
-        <option value="checklist" ${selected==='checklist'?'selected':''}>Checklist — shipping an order, inspecting equipment</option>
-        <option value="daily" ${selected==='daily'?'selected':''}>Daily — morning routine, weekly reset</option>
-      </select>
+      <input type="hidden" id="tmpl-type" value="${selected}"/>
+      <div class="csel" id="csel-type" onclick="toggleCsel(event)">
+        <div class="csel-display">
+          <span class="csel-display-label">${current.label}</span>
+          <span class="csel-display-hint">(${current.hint})</span>
+          <svg class="csel-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="csel-dropdown" id="csel-dropdown">${optionsHtml}</div>
+      </div>
     </div>`;
 }
+function toggleCsel(e) {
+  const wrap = e.currentTarget;
+  const dd = wrap.querySelector('.csel-dropdown');
+  const isOpen = dd.classList.contains('open');
+  document.querySelectorAll('.csel-dropdown.open').forEach(d=>d.classList.remove('open'));
+  if(!isOpen) dd.classList.add('open');
+  e.stopPropagation();
+}
+function selectType(value, el) {
+  const opt = TYPE_OPTIONS.find(o=>o.value===value);
+  document.getElementById('tmpl-type').value = value;
+  const display = el.closest('.csel').querySelector('.csel-display');
+  display.querySelector('.csel-display-label').textContent = opt.label;
+  display.querySelector('.csel-display-hint').textContent = '('+opt.hint+')';
+  el.closest('.csel-dropdown').querySelectorAll('.csel-option').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  el.closest('.csel-dropdown').classList.remove('open');
+}
+document.addEventListener('click', ()=>document.querySelectorAll('.csel-dropdown.open').forEach(d=>d.classList.remove('open')));
 
 // ── HELPERS ───────────────────────────────────────────────────
 function setContent(html) {
