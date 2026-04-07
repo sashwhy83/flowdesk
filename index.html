@@ -353,15 +353,10 @@ function typeSelectHTML(selected='workflow') {
     <div>
       <label>Type</label>
       <select id="tmpl-type">
-        <option value="workflow" ${selected==='workflow'?'selected':''}>Workflow</option>
-        <option value="checklist" ${selected==='checklist'?'selected':''}>Checklist</option>
-        <option value="daily" ${selected==='daily'?'selected':''}>Daily</option>
+        <option value="workflow" ${selected==='workflow'?'selected':''}>Workflow — launching a product, onboarding a new hire</option>
+        <option value="checklist" ${selected==='checklist'?'selected':''}>Checklist — shipping an order, inspecting equipment</option>
+        <option value="daily" ${selected==='daily'?'selected':''}>Daily — morning routine, weekly reset</option>
       </select>
-      <div class="type-hints">
-        <div class="type-hint"><strong>Workflow</strong> — one project at a time (launching a product, planning an event, onboarding a new hire)</div>
-        <div class="type-hint"><strong>Checklist</strong> — one situation at a time (shipping an order, inspecting equipment, preparing for a meeting)</div>
-        <div class="type-hint"><strong>Daily</strong> — same routine on repeat (morning routine, weekly reset, end-of-day wrap-up)</div>
-      </div>
     </div>`;
 }
 
